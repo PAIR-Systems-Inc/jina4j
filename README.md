@@ -24,7 +24,7 @@ A Java client library for [Jina AI's](https://jina.ai/) Embedding and Reranking 
 ### Gradle
 
 ```gradle
-implementation 'com.github.PAIR-Systems-Inc:jina4j:1.0.0'
+implementation 'com.github.PAIR-Systems-Inc:jina4j:0.0.1'
 ```
 
 ### JitPack
@@ -40,7 +40,7 @@ repositories {
 Then add the dependency:
 
 ```gradle
-implementation 'com.github.PAIR-Systems-Inc:jina4j:1.0.0'
+implementation 'com.github.PAIR-Systems-Inc:jina4j:0.0.1'
 ```
 
 ## Examples
