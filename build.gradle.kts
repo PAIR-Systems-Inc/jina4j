@@ -80,6 +80,7 @@ tasks.register("fixGeneratedCode") {
             val content = apiClientFile.readText()
             val fixedContent = content
                 .replace("private String basePath = \"http://localhost\";", "private String basePath = \"https://api.jina.ai\";")
+                .replace("protected Integer serverIndex = 0;", "protected Integer serverIndex = null;")
             apiClientFile.writeText(fixedContent)
         }
         
@@ -143,8 +144,8 @@ tasks.withType<JavaCompile> {
     outputs.cacheIf { false }
 }
 
-tasks.named("sourcesJar") {
-    dependsOn("openApiGenerate")
+tasks.named<Jar>("sourcesJar") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 publishing {

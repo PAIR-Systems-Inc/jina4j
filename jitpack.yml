@@ -4,4 +4,5 @@ before_install:
   - chmod +x gradlew
 install:
   - ./gradlew openApiGenerate
-  - ./gradlew publishToMavenLocal -x javadoc -x openApiGenerate
+  - ./gradlew fixGeneratedCode
+  - ./gradlew publishToMavenLocal -x javadoc -x openApiGenerate -x fixGeneratedCode

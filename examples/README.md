@@ -25,7 +25,7 @@ export JINA_API_KEY="your-api-key-here"
 ./gradlew runMultiVectorExample
 ```
 
-If the three examples run correctly, you should see output similar to the following:
+If the examples run correctly, you should see output similar to the following:
 
 ```
 # From the Embedding Example
