@@ -52,8 +52,8 @@ jobs:
           build/libs/*.jar
         retention-days: 30
         
-    - name: Publish to GitHub Packages (push main only)
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    - name: Publish to GitHub Packages (release only)
+      if: github.event_name == 'release'
       run: ./gradlew publish -x openApiGenerate -x fixGeneratedCode
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
