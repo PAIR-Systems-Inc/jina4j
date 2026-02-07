@@ -34,12 +34,12 @@ public class RerankingExample {
             rankInput.setQuery(new Query("What is the capital of France?"));
             
             // Create documents list
-            List<RankAPIInputDocumentsInner> documents = new ArrayList<>();
-            documents.add(new RankAPIInputDocumentsInner("Madrid is the capital of Spain"));
-            documents.add(new RankAPIInputDocumentsInner("France is a country in Europe"));
-            documents.add(new RankAPIInputDocumentsInner("Paris to France is like Rome to Italy"));
-            documents.add(new RankAPIInputDocumentsInner("Berlin is the capital of Germany"));
-            documents.add(new RankAPIInputDocumentsInner("Paris is the capital and largest city of France"));
+            List<DocumentsInner> documents = new ArrayList<>();
+            documents.add(new DocumentsInner("Madrid is the capital of Spain"));
+            documents.add(new DocumentsInner("France is a country in Europe"));
+            documents.add(new DocumentsInner("Paris to France is like Rome to Italy"));
+            documents.add(new DocumentsInner("Berlin is the capital of Germany"));
+            documents.add(new DocumentsInner("Paris is the capital and largest city of France"));
             rankInput.setDocuments(documents);
             rankInput.setTopN(3);
             rankInput.setReturnDocuments(true);

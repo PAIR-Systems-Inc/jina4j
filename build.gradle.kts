@@ -1,11 +1,11 @@
 plugins {
     `java-library`
     `maven-publish`
-    id("org.openapi.generator") version "7.10.0"
+    id("org.openapi.generator") version "7.19.0"
 }
 
 group = "com.github.PAIR-Systems-Inc"
-version = "0.0.1"
+version = "v0.0.2"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -18,25 +18,29 @@ repositories {
     mavenCentral()
 }
 
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 dependencies {
     // OkHttp and Gson
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("com.google.code.gson:gson:2.13.1")
+    implementation("com.squareup.okhttp3:okhttp:5.3.2")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
+    implementation("com.google.code.gson:gson:2.13.2")
     implementation("io.gsonfire:gson-fire:1.9.0")
     
     // Jakarta WS-RS (for generated JSON class)
-    implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
+    implementation("jakarta.ws.rs:jakarta.ws.rs-api:4.0.0")
     
     // misc
-    implementation("org.apache.commons:commons-lang3:3.17.0")
+    implementation("org.apache.commons:commons-lang3:3.20.0")
     implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
     
     // Test dependencies
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.14.2")
+    testImplementation("org.mockito:mockito-core:5.21.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.21.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
 }
 
 tasks.test {
