@@ -10,11 +10,12 @@ Use the workflow script to run the same end-to-end process used in this reposito
 
 ## Required Inputs
 - `JINA_API_KEY` (or `--api-key`) is required unless examples are explicitly skipped.
-- If the user requests example validation and has not provided a key, ask for the key before running the script.
+- If examples are requested and no key is present in `JINA_API_KEY` or `--api-key`, stop and ask the user to provide the key before running the script.
+- Do not silently switch to `--skip-examples` when the key is missing; get explicit user instruction first.
 
 ## Execute Workflow
 1. Change to repository root (the directory containing `build.gradle.kts`).
-2. Obtain API key from the user when examples must be run.
+2. If examples must run, check for `JINA_API_KEY`/`--api-key`. If missing, ask the user: `Please provide your JINA_API_KEY so I can run the embedding, multi-vector, and reranking example validations.`
 3. Run the script with the right mode.
 
 ```bash
