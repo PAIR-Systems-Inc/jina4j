@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.PAIR-Systems-Inc"
-version = "v0.0.2"
+version = "v0.0.3"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -78,12 +78,24 @@ sourceSets {
 tasks.register("fixGeneratedCode") {
     dependsOn("openApiGenerate")
     doLast {
+        fun patchGeneratedFile(relativePath: String, patch: (String) -> String) {
+            val file = File("$buildDir/generated/src/main/java/$relativePath")
+            if (!file.exists()) return
+            val original = file.readText()
+            val updated = patch(original)
+            if (updated != original) {
+                file.writeText(updated)
+            }
+        }
+
         // Fix default base path in ApiClient.java
         val apiClientFile = File("$buildDir/generated/src/main/java/ai/pairsys/jina4j/client/ApiClient.java")
         if (apiClientFile.exists()) {
             val content = apiClientFile.readText()
             val fixedContent = content
                 .replace("private String basePath = \"http://localhost\";", "private String basePath = \"https://api.jina.ai\";")
+                .replace("protected String basePath = \"http://localhost\";", "protected String basePath = \"https://api.jina.ai\";")
+                .replace("String basePath = \"http://localhost\";", "String basePath = \"https://api.jina.ai\";")
                 .replace("protected Integer serverIndex = 0;", "protected Integer serverIndex = null;")
             apiClientFile.writeText(fixedContent)
         }
@@ -135,6 +147,277 @@ tasks.register("fixGeneratedCode") {
                 )
             inputFile.writeText(fixedContent)
         }
+
+        // Fix invalid Map anyOf/oneOf wrappers emitted by the Java generator for OpenAPI 3.1 map schemas.
+        patchGeneratedFile("ai/pairsys/jina4j/client/model/Score.java") { content ->
+            content
+                .replace(
+                    "final TypeAdapter<Map<String, BigDecimal>> adapterMap<String, BigDecimal> = gson.getDelegateAdapter(this, TypeToken.get(Map<String, BigDecimal>.class));",
+                    "final Type typeInstanceMapStringBigDecimal = new TypeToken<Map<String, BigDecimal>>(){}.getType();\n            final TypeAdapter<Map<String, BigDecimal>> adapterMapStringBigDecimal = (TypeAdapter<Map<String, BigDecimal>>) gson.getDelegateAdapter(this, TypeToken.get(typeInstanceMapStringBigDecimal));"
+                )
+                .replace("instanceof Map<String, BigDecimal>", "instanceof Map<?, ?>")
+                .replace(
+                    "Map<String, BigDecimal>.validateJsonElement(jsonElement);",
+                    "if (!jsonElement.isJsonObject()) { throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be an object in the JSON string but got `%s`\", jsonElement.toString())); }"
+                )
+        }
+
+        patchGeneratedFile("ai/pairsys/jina4j/client/model/Prediction.java") { content ->
+            content
+                .replace(
+                    "final TypeAdapter<Map<String, String>> adapterMap<String, String> = gson.getDelegateAdapter(this, TypeToken.get(Map<String, String>.class));",
+                    "final Type typeInstanceMapStringString = new TypeToken<Map<String, String>>(){}.getType();\n            final TypeAdapter<Map<String, String>> adapterMapStringString = (TypeAdapter<Map<String, String>>) gson.getDelegateAdapter(this, TypeToken.get(typeInstanceMapStringString));"
+                )
+                .replace(
+                    "JsonPrimitive primitive = adapterMapStringString.toJsonTree((Map<String, String>)value.getActualInstance()).getAsJsonPrimitive();\n                        elementAdapter.write(out, primitive);",
+                    "JsonElement element = adapterMapStringString.toJsonTree((Map<String, String>)value.getActualInstance());\n                        elementAdapter.write(out, element);"
+                )
+                .replace("instanceof Map<String, String>", "instanceof Map<?, ?>")
+                .replace(
+                    "if (!jsonElement.getAsJsonPrimitive().isNumber()) {\n                            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be of type Number in the JSON string but got `%s`\", jsonElement.toString()));\n                        }",
+                    "if (!jsonElement.isJsonObject()) {\n                            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be an object in the JSON string but got `%s`\", jsonElement.toString()));\n                        }"
+                )
+        }
+
+        patchGeneratedFile("ai/pairsys/jina4j/client/model/Labels.java") { content ->
+            content
+                .replace(
+                    "final TypeAdapter<Map<String, List<String>>> adapterMap<String, List<String>> = gson.getDelegateAdapter(this, TypeToken.get(Map<String, List<String>>.class));",
+                    "final Type typeInstanceMapStringListString = new TypeToken<Map<String, List<String>>>(){}.getType();\n            final TypeAdapter<Map<String, List<String>>> adapterMapStringListString = (TypeAdapter<Map<String, List<String>>>) gson.getDelegateAdapter(this, TypeToken.get(typeInstanceMapStringListString));"
+                )
+                .replace(
+                    "JsonPrimitive primitive = adapterListString.toJsonTree((List<String>)value.getActualInstance()).getAsJsonPrimitive();\n                        elementAdapter.write(out, primitive);",
+                    "JsonElement element = adapterListString.toJsonTree((List<String>)value.getActualInstance());\n                        elementAdapter.write(out, element);"
+                )
+                .replace("instanceof Map<String, List<String>>", "instanceof Map<?, ?>")
+                .replace(
+                    "Map<String, List<String>>.validateJsonElement(jsonElement);",
+                    "if (!jsonElement.isJsonObject()) { throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be an object in the JSON string but got `%s`\", jsonElement.toString())); }"
+                )
+        }
+
+        patchGeneratedFile("ai/pairsys/jina4j/client/model/Predictions.java") { content ->
+            content
+                .replace(
+                    "final TypeAdapter<Map<String, List<ClassificationPredictionLabel>>> adapterMap<String, List<ClassificationPredictionLabel>> = gson.getDelegateAdapter(this, TypeToken.get(Map<String, List<ClassificationPredictionLabel>>.class));",
+                    "final Type typeInstanceMapStringListClassificationPredictionLabel = new TypeToken<Map<String, List<ClassificationPredictionLabel>>>(){}.getType();\n            final TypeAdapter<Map<String, List<ClassificationPredictionLabel>>> adapterMapStringListClassificationPredictionLabel = (TypeAdapter<Map<String, List<ClassificationPredictionLabel>>>) gson.getDelegateAdapter(this, TypeToken.get(typeInstanceMapStringListClassificationPredictionLabel));"
+                )
+                .replace("instanceof Map<String, List<ClassificationPredictionLabel>>", "instanceof Map<?, ?>")
+                .replace(
+                    "Map<String, List<ClassificationPredictionLabel>>.validateJsonElement(jsonElement);",
+                    "if (!jsonElement.isJsonObject()) { throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be an object in the JSON string but got `%s`\", jsonElement.toString())); }"
+                )
+        }
+
+        // Fix anyOf wrapper handling for embedding response payloads.
+        patchGeneratedFile("ai/pairsys/jina4j/client/model/Embedding.java") { content ->
+            content
+                .replace("if (!list.isEmpty() && list.get(0) instanceof BigDecimal) {", "if (list.isEmpty() || list.get(0) instanceof BigDecimal) {")
+                .replace("if (!jsonElement.getAsJsonPrimitive().isNumber()) {", "if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isNumber()) {")
+        }
+
+        patchGeneratedFile("ai/pairsys/jina4j/client/model/Data.java") { content ->
+            content
+                .replace(
+                    "                    // check if the actual instance is of the type `List<SingleEmbeddingData>`\n" +
+                        "                    if (value.getActualInstance() instanceof List<?>) {\n" +
+                        "                        List<?> list = (List<?>) value.getActualInstance();\n" +
+                        "                        if (!list.isEmpty() && list.get(0) instanceof SingleEmbeddingData) {\n" +
+                        "                            JsonArray array = adapterListSingleEmbeddingData.toJsonTree((List<SingleEmbeddingData>)value.getActualInstance()).getAsJsonArray();\n" +
+                        "                            elementAdapter.write(out, array);\n" +
+                        "                            return;\n" +
+                        "                        }\n" +
+                        "                    }\n",
+                    "                    if (value.getActualInstance() instanceof List<?>) {\n" +
+                        "                        List<?> list = (List<?>) value.getActualInstance();\n" +
+                        "                        if (list.isEmpty() || list.get(0) instanceof SingleEmbeddingData) {\n" +
+                        "                            JsonArray array = adapterListSingleEmbeddingData.toJsonTree((List<SingleEmbeddingData>)value.getActualInstance()).getAsJsonArray();\n" +
+                        "                            elementAdapter.write(out, array);\n" +
+                        "                            return;\n" +
+                        "                        }\n" +
+                        "                        if (list.get(0) instanceof MultiEmbeddingData) {\n" +
+                        "                            JsonArray array = adapterListMultiEmbeddingData.toJsonTree((List<MultiEmbeddingData>)value.getActualInstance()).getAsJsonArray();\n" +
+                        "                            elementAdapter.write(out, array);\n" +
+                        "                            return;\n" +
+                        "                        }\n" +
+                        "                    }\n"
+                )
+                .replace(
+                    "                    // deserialize List<SingleEmbeddingData>\n",
+                    "                    // deserialize List<MultiEmbeddingData>\n" +
+                        "                    try {\n" +
+                        "                        // validate the JSON object to see if any exception is thrown\n" +
+                        "                        if (!jsonElement.isJsonArray()) {\n" +
+                        "                            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be a array type in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "                        }\n" +
+                        "\n" +
+                        "                        JsonArray array = jsonElement.getAsJsonArray();\n" +
+                        "                        // validate array items\n" +
+                        "                        for(JsonElement element : array) {\n" +
+                        "                            MultiEmbeddingData.validateJsonElement(element);\n" +
+                        "                        }\n" +
+                        "                        actualAdapter = adapterListMultiEmbeddingData;\n" +
+                        "                        Data ret = new Data();\n" +
+                        "                        ret.setActualInstance(actualAdapter.fromJsonTree(jsonElement));\n" +
+                        "                        return ret;\n" +
+                        "                    } catch (Exception e) {\n" +
+                        "                        // deserialization failed, continue\n" +
+                        "                        errorMessages.add(String.format(java.util.Locale.ROOT, \"Deserialization for List<MultiEmbeddingData> failed with `%s`.\", e.getMessage()));\n" +
+                        "                        log.log(Level.FINER, \"Input data does not match schema 'List<MultiEmbeddingData>'\", e);\n" +
+                        "                    }\n" +
+                        "\n" +
+                        "                    // deserialize List<SingleEmbeddingData>\n"
+                )
+                .replace(
+                    "        schemas.put(\"List<SingleEmbeddingData>\", List.class);",
+                    "        schemas.put(\"List<SingleEmbeddingData>\", List.class);\n" +
+                        "        schemas.put(\"List<MultiEmbeddingData>\", List.class);"
+                )
+                .replace(
+                    "        if (instance instanceof List<?>) {\n" +
+                        "            List<?> list = (List<?>) instance;\n" +
+                        "            if (!list.isEmpty() && list.get(0) instanceof SingleEmbeddingData) {\n" +
+                        "                super.setActualInstance(instance);\n" +
+                        "                return;\n" +
+                        "            }\n" +
+                        "        }\n",
+                    "        if (instance instanceof List<?>) {\n" +
+                        "            List<?> list = (List<?>) instance;\n" +
+                        "            if (list.isEmpty() || list.get(0) instanceof SingleEmbeddingData || list.get(0) instanceof MultiEmbeddingData) {\n" +
+                        "                super.setActualInstance(instance);\n" +
+                        "                return;\n" +
+                        "            }\n" +
+                        "        }\n"
+                )
+                .replace(
+                    "        // validate the json string with List<SingleEmbeddingData>\n",
+                    "        // validate the json string with List<MultiEmbeddingData>\n" +
+                        "        try {\n" +
+                        "            if (!jsonElement.isJsonArray()) {\n" +
+                        "                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be a array type in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "            }\n" +
+                        "            JsonArray array = jsonElement.getAsJsonArray();\n" +
+                        "            // validate array items\n" +
+                        "            for(JsonElement element : array) {\n" +
+                        "                MultiEmbeddingData.validateJsonElement(element);\n" +
+                        "            }\n" +
+                        "            return;\n" +
+                        "        } catch (Exception e) {\n" +
+                        "            errorMessages.add(String.format(java.util.Locale.ROOT, \"Deserialization for List<MultiEmbeddingData> failed with `%s`.\", e.getMessage()));\n" +
+                        "            // continue to the next one\n" +
+                        "        }\n" +
+                        "        // validate the json string with List<SingleEmbeddingData>\n"
+                )
+        }
+
+        patchGeneratedFile("ai/pairsys/jina4j/client/model/Embeddings.java") { content ->
+            content
+                .replace(
+                    "                    // check if the actual instance is of the type `List<String>`\n" +
+                        "                    if (value.getActualInstance() instanceof List<?>) {\n" +
+                        "                        JsonPrimitive primitive = adapterListString.toJsonTree((List<String>)value.getActualInstance()).getAsJsonPrimitive();\n" +
+                        "                        elementAdapter.write(out, primitive);\n" +
+                        "                        return;\n" +
+                        "                    }\n",
+                    "                    if (value.getActualInstance() instanceof List<?>) {\n" +
+                        "                        List<?> list = (List<?>) value.getActualInstance();\n" +
+                        "                        if (list.isEmpty() || list.get(0) instanceof String) {\n" +
+                        "                            JsonArray array = adapterListString.toJsonTree((List<String>)value.getActualInstance()).getAsJsonArray();\n" +
+                        "                            elementAdapter.write(out, array);\n" +
+                        "                            return;\n" +
+                        "                        }\n" +
+                        "                        if (list.get(0) instanceof List<?>) {\n" +
+                        "                            JsonArray array = adapterListListBigDecimal.toJsonTree((List<List<BigDecimal>>)value.getActualInstance()).getAsJsonArray();\n" +
+                        "                            elementAdapter.write(out, array);\n" +
+                        "                            return;\n" +
+                        "                        }\n" +
+                        "                    }\n"
+                )
+                .replace(
+                    "                    // deserialize List<String>\n",
+                    "                    // deserialize List<List<BigDecimal>>\n" +
+                        "                    try {\n" +
+                        "                        // validate the JSON object to see if any exception is thrown\n" +
+                        "                        if (!jsonElement.isJsonArray()) {\n" +
+                        "                            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be a array type in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "                        }\n" +
+                        "\n" +
+                        "                        JsonArray array = jsonElement.getAsJsonArray();\n" +
+                        "                        // validate array items\n" +
+                        "                        for(JsonElement element : array) {\n" +
+                        "                            if (!element.isJsonArray()) {\n" +
+                        "                                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected array items to be arrays in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "                            }\n" +
+                        "                            for (JsonElement innerElement : element.getAsJsonArray()) {\n" +
+                        "                                if (!innerElement.isJsonPrimitive() || !innerElement.getAsJsonPrimitive().isNumber()) {\n" +
+                        "                                    throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected nested array items to be of type Number in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "                                }\n" +
+                        "                            }\n" +
+                        "                        }\n" +
+                        "                        actualAdapter = adapterListListBigDecimal;\n" +
+                        "                        Embeddings ret = new Embeddings();\n" +
+                        "                        ret.setActualInstance(actualAdapter.fromJsonTree(jsonElement));\n" +
+                        "                        return ret;\n" +
+                        "                    } catch (Exception e) {\n" +
+                        "                        // deserialization failed, continue\n" +
+                        "                        errorMessages.add(String.format(java.util.Locale.ROOT, \"Deserialization for List<List<BigDecimal>> failed with `%s`.\", e.getMessage()));\n" +
+                        "                        log.log(Level.FINER, \"Input data does not match schema 'List<List<BigDecimal>>'\", e);\n" +
+                        "                    }\n" +
+                        "\n" +
+                        "                    // deserialize List<String>\n"
+                )
+                .replace(
+                    "if (!element.getAsJsonPrimitive().isString()) {",
+                    "if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {"
+                )
+                .replace(
+                    "        schemas.put(\"List<String>\", List.class);",
+                    "        schemas.put(\"List<String>\", List.class);\n" +
+                        "        schemas.put(\"List<List<BigDecimal>>\", List.class);"
+                )
+                .replace(
+                    "        if (instance instanceof List<?>) {\n" +
+                        "            List<?> list = (List<?>) instance;\n" +
+                        "            if (!list.isEmpty() && list.get(0) instanceof String) {\n" +
+                        "                super.setActualInstance(instance);\n" +
+                        "                return;\n" +
+                        "            }\n" +
+                        "        }\n",
+                    "        if (instance instanceof List<?>) {\n" +
+                        "            List<?> list = (List<?>) instance;\n" +
+                        "            if (list.isEmpty() || list.get(0) instanceof String || list.get(0) instanceof List<?>) {\n" +
+                        "                super.setActualInstance(instance);\n" +
+                        "                return;\n" +
+                        "            }\n" +
+                        "        }\n"
+                )
+                .replace(
+                    "        // validate the json string with List<String>\n",
+                    "        // validate the json string with List<List<BigDecimal>>\n" +
+                        "        try {\n" +
+                        "            if (!jsonElement.isJsonArray()) {\n" +
+                        "                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected json element to be a array type in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "            }\n" +
+                        "            JsonArray array = jsonElement.getAsJsonArray();\n" +
+                        "            // validate array items\n" +
+                        "            for(JsonElement element : array) {\n" +
+                        "                if (!element.isJsonArray()) {\n" +
+                        "                    throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected array items to be arrays in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "                }\n" +
+                        "                for (JsonElement innerElement : element.getAsJsonArray()) {\n" +
+                        "                    if (!innerElement.isJsonPrimitive() || !innerElement.getAsJsonPrimitive().isNumber()) {\n" +
+                        "                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, \"Expected nested array items to be of type Number in the JSON string but got `%s`\", jsonElement.toString()));\n" +
+                        "                    }\n" +
+                        "                }\n" +
+                        "            }\n" +
+                        "            return;\n" +
+                        "        } catch (Exception e) {\n" +
+                        "            errorMessages.add(String.format(java.util.Locale.ROOT, \"Deserialization for List<List<BigDecimal>> failed with `%s`.\", e.getMessage()));\n" +
+                        "            // continue to the next one\n" +
+                        "        }\n" +
+                        "        // validate the json string with List<String>\n"
+                )
+        }
     }
 }
 
@@ -149,6 +432,7 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.named<Jar>("sourcesJar") {
+    dependsOn("fixGeneratedCode")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
