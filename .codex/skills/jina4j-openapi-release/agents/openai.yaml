@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jina4j OpenAPI Release"
+  short_description: "Refresh OpenAPI, regenerate, validate, and release."
+  default_prompt: "Run the full Jina4j OpenAPI refresh workflow: fetch and format openapi.json, update openapi/jina-openapi.json, regenerate client code, run build and example validations, then optionally commit/push/tag and produce a detailed summary."
